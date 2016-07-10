@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup
 import requests
 import lxml
 import random
+import time
 
 
 
@@ -84,6 +85,16 @@ def isValidPage(soup):
             return False
     return True
 
+"""
+a function to append lines to a fileName
+"""
+def appendToFile(outlines, outFileName):
+    print("appending to file: " + outFileName)
+    with open(outFileName, "a") as outFile:
+        outFile.writelines([line+'\n' for line in outlines])
+
+
+
 
 """
 main method: gets webpage, calls various scraping functions and writes output to a csv file
@@ -91,13 +102,21 @@ main method: gets webpage, calls various scraping functions and writes output to
 def main():
     outlines = []
     base_url = "http://www.genealogy.ams.org/id.php?id="
-    outFileName = "test.csv"
+    outFileName = "mathids_30601_100000.csv"
     colNames = ['mathId', 'name', 'advisors', 'thesis', 'thesisUniversity', 'thesisCountry', 'thesisYear', 'numStudents', 'numDescendants' ]
+    missedIds = []
+
+    print("writing column names to file: " + outFileName)
+    with open(outFileName, "w") as outFile:
+        outFile.write(','.join(colNames) + '\n')
 
     print("starting scraping math genealogy project")
     print("please don't block my IP")
 
-    for i in range(100,120):
+    for i in range(30601,100001):
+        # I am a bit nervous about getting my ip blocked
+        #if (i % 100 == 1):
+        #    time.sleep(6)
         an_id = str(i)
         print("scraping id: ", an_id)
 
@@ -112,14 +131,23 @@ def main():
             print("bad page for id: " + an_id)
             continue
 
-        numStud, numDes = numStudentsAndDescendants(soup)
-        comb = an_id+',' + getName(soup) + ','+ getAdvisors(soup) +','+ getThesisTitle(soup) + ',' + getUniversity(soup) +',' + getCountry(soup) + ',' + getYear(soup) + ',' + str(numStud) + ',' + str(numDes)
-        outlines.append(comb)
+        # sometimes there is a bad page in the mix, so we skip it.
+        try:
+            numStud, numDes = numStudentsAndDescendants(soup)
+            comb = an_id+',' + getName(soup) + ','+ getAdvisors(soup) +','+ getThesisTitle(soup) + ',' + getUniversity(soup) +',' + getCountry(soup) + ',' + getYear(soup) + ',' + str(numStud) + ',' + str(numDes)
+            outlines.append(comb)
+        except TypeError:
+            print("something went wrong with the types in id: " + an_id + ". skipping...")
+            missedIds.append(an_id)
+            continue
 
-    print("writing to file: " + outFileName)
-    with open(outFileName, "w") as outFile:
-        outFile.write(','.join(colNames) + '\n')
-        outFile.writelines([line+'\n' for line in outlines])
+        # every 200 entries, write to file and reset outlines to hopefully stop memory errors
+        if (i % 200 == 0):
+            appendToFile(outlines, outFileName)
+            outlines = []
+
+    print("the skipped Id's were: ")
+    print(missedIds)
 
 
 if __name__ == "__main__":
