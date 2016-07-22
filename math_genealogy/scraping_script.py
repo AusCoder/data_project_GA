@@ -102,7 +102,7 @@ main method: gets webpage, calls various scraping functions and writes output to
 def main():
     outlines = []
     base_url = "http://www.genealogy.ams.org/id.php?id="
-    outFileName = "mathids_30601_100000.csv"
+    outFileName = "mathids_100000_100400.csv"
     colNames = ['mathId', 'name', 'advisors', 'thesis', 'thesisUniversity', 'thesisCountry', 'thesisYear', 'numStudents', 'numDescendants' ]
     missedIds = []
 
@@ -113,7 +113,7 @@ def main():
     print("starting scraping math genealogy project")
     print("please don't block my IP")
 
-    for i in range(30601,100001):
+    for i in range(100000,100400):
         # I am a bit nervous about getting my ip blocked
         #if (i % 100 == 1):
         #    time.sleep(6)
