@@ -34,20 +34,41 @@ def getUniversity(soup):
     for x in soup.findAll('span'):
         if 'Ph.D.' in x.text:
             return ' '.join(x.text.split()[1:-1]).replace(',', '')
+        elif 'Dr.' in x.text:
+            return ' '.join(x.text.split()[1:-1]).replace(',', '')
+        elif 'Doctorat' in x.text:
+            return ' '.join(x.text.split()[1:-1]).replace(',', '')
         elif 'Dr. phil.' in x.text:
             return ' '.join(x.text.split()[2:-1]).replace(',', '')
+        elif 'Docteur en Sciences' in x.text:
+            return ' '.join(x.text.split()[3:-1]).replace(',', '')
+        elif 'D.Sc.' in x.text:
+            return ' '.join(x.text.split()[1:-1]).replace(',', '')
+        elif 'Dr. rer. nat.' in x.text:
+            return ' '.join(x.text.split()[3:-1]).replace(',', '')
+
     return ''
 
 """
 get the dissertation year
 """
 def getYear(soup):
+    for x in soup.findAll('span'):
+        if 'Docteur en Sciences' in x.text or 'Ph.D.' in x.text or 'Dr. phil.'  in x.text or 'D.Sc.' in x.text or 'Dr. rer. nat.' in x.text or 'Dr.' in x.text or 'Doctorat' in x.text:
+            return x.text.split()[-1].replace(',', '')
+    return ''
+
+"""
+get title, university, year string
+"""
+def titleUniversityYear(soup, aList):
     try:
-        for x in soup.findAll('span'):
-            if 'Ph.D.' in x.text or 'Dr. phil.' in x.text:
-                return x.text.split()[-1].replace(',', '')
+        imgElt = [x for x in soup.findAll('img') if 'img/flags' in x['src']][0]
+        #print(imgElt.parent.find('span').text)
+        aList.append(imgElt.parent.find('span').text)
     except IndexError:
-        return ''
+        pass
+
 
 """
 get the country where the mathematician did their dissertation
@@ -62,18 +83,17 @@ def getCountry(soup):
 get number of students and descendants from the soup
 """
 def numStudentsAndDescendants(soup):
-    try:
+    if not [x.text for x in soup.findAll('p') if 'No students known' in x.text]:
         line = [x.text for x in soup.findAll('p') if 'According to our current on-line database' in x.text][0].strip('.').split()
         students = -1
         descendants = -1
         for i in range(len(line)-1):
-            if line[i].isdigit() and 'students' in line[i+1]:
+            if line[i].isdigit() and 'student' in line[i+1]:
                 students = int(line[i])
-            if line[i].isdigit() and 'descendants' in line[i+1]:
+            if line[i].isdigit() and 'descendant' in line[i+1]:
                 descendants = int(line[i])
         return students, descendants
-
-    except IndexError:
+    else:
         return 0,0
 
 """
@@ -105,6 +125,10 @@ def main():
     outFileName = "mathids_100000_100400.csv"
     colNames = ['mathId', 'name', 'advisors', 'thesis', 'thesisUniversity', 'thesisCountry', 'thesisYear', 'numStudents', 'numDescendants' ]
     missedIds = []
+    badTitleUniversityYearString = []
+
+    # a counter to know when to write to file
+    counter = 0
 
     print("writing column names to file: " + outFileName)
     with open(outFileName, "w") as outFile:
@@ -131,19 +155,38 @@ def main():
             print("bad page for id: " + an_id)
             continue
 
+        # increment the counter
+        counter += 1
+
         # sometimes there is a bad page in the mix, so we skip it.
         try:
             numStud, numDes = numStudentsAndDescendants(soup)
             comb = an_id+',' + getName(soup) + ','+ getAdvisors(soup) +','+ getThesisTitle(soup) + ',' + getUniversity(soup) +',' + getCountry(soup) + ',' + getYear(soup) + ',' + str(numStud) + ',' + str(numDes)
+            #print(comb)
             outlines.append(comb)
+
+
+
         except TypeError:
             print("something went wrong with the types in id: " + an_id + ". skipping...")
             missedIds.append(an_id)
+            print(numStud)
+            print(numDes)
+            print(getName(soup))
+            print(getAdvisors(soup))
+            print(getThesisTitle(soup))
+            print(getCountry(soup))
+            print(getUniversity(soup))
+            print(getYear(soup))
+            titleUniversityYear(soup, badTitleUniversityYearString)
+            print(badTitleUniversityYearString)
             continue
 
+
         # every 200 entries, write to file and reset outlines to hopefully stop memory errors
-        if (i % 200 == 0):
+        if (counter >= 200):
             appendToFile(outlines, outFileName)
+            counter = 0
             outlines = []
 
     print("the skipped Id's were: ")
