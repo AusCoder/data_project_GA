@@ -122,7 +122,7 @@ main method: gets webpage, calls various scraping functions and writes output to
 def main():
     outlines = []
     base_url = "http://www.genealogy.ams.org/id.php?id="
-    outFileName = "mathids_100000_100400.csv"
+    outFileName = "mathids_99896_99999.csv"
     colNames = ['mathId', 'name', 'advisors', 'thesis', 'thesisUniversity', 'thesisCountry', 'thesisYear', 'numStudents', 'numDescendants' ]
     missedIds = []
     badTitleUniversityYearString = []
@@ -137,7 +137,7 @@ def main():
     print("starting scraping math genealogy project")
     print("please don't block my IP")
 
-    for i in range(100000,100400):
+    for i in range(99896,100000):
         # I am a bit nervous about getting my ip blocked
         #if (i % 100 == 1):
         #    time.sleep(6)
@@ -170,24 +170,16 @@ def main():
         except TypeError:
             print("something went wrong with the types in id: " + an_id + ". skipping...")
             missedIds.append(an_id)
-            print(numStud)
-            print(numDes)
-            print(getName(soup))
-            print(getAdvisors(soup))
-            print(getThesisTitle(soup))
-            print(getCountry(soup))
-            print(getUniversity(soup))
-            print(getYear(soup))
-            titleUniversityYear(soup, badTitleUniversityYearString)
-            print(badTitleUniversityYearString)
             continue
 
 
         # every 200 entries, write to file and reset outlines to hopefully stop memory errors
-        if (counter >= 200):
-            appendToFile(outlines, outFileName)
-            counter = 0
-            outlines = []
+        #if (counter >= 200):
+            #appendToFile(outlines, outFileName)
+            #counter = 0
+            #outlines = []
+        appendToFile(outlines, outFileName)
+        outlines=[]
 
     print("the skipped Id's were: ")
     print(missedIds)
